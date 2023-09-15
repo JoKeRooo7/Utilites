@@ -22,7 +22,6 @@ struct CatFlags CatUtilityCheckFlags(int argc, char **argv);
 int CatUtilityUsingGetOpt(int argc, char **argv);
 void CatUtilityOpenFile(int argc, char **argv, struct CatFlags *value);
 void CatUtilityReadFile(struct CatFlags *value, FILE *files);
-
 void CatUtilityAllPrint(struct CatFlags *value, struct CatReadFile *data);
 void CatUtilityModeForNewLine(struct CatFlags *value, struct CatReadFile *data);
 void CatUtilityPrintSymbol(struct CatReadFile *data, int *mode);
