@@ -253,25 +253,25 @@ void GrepUtilityOpenFile(struct GrepDates *data) {
   }
 }
 
-void GrepUtilityReadFile(struct GrepDates *data, int *i) {
-  char string = NULL;
-  size_t size_string = 0;
-  // for regex
-  size_t nmatch = 1;
-  regmatch_t pmatch[1];
-  regex_t buffer;
-  int temp, regex_flag;
+// void GrepUtilityReadFile(struct GrepDates *data, int *i) {
+//   char string = NULL;
+//   size_t size_string = 0;
+//   // for regex
+//   size_t nmatch = 1;
+//   regmatch_t pmatch[1];
+//   regex_t buffer;
+//   int temp, regex_flag;
 
-  if (data -> mode.i == 0) {
-    regex_flag = REG_NEWLINE | REG_EXTENDED | REG_ICASE;
-  } else {
-    regex_flag = REG_NEWLINE | REG_EXTENDED;
-  }
-  if (regcomp(&buffer, data -> pattern.str_p, regex_flag) == 0) {
+//   if (data -> mode.i == 0) {
+//     regex_flag = REG_NEWLINE | REG_EXTENDED | REG_ICASE;
+//   } else {
+//     regex_flag = REG_NEWLINE | REG_EXTENDED;
+//   }
+//   if (regcomp(&buffer, data -> pattern.str_p, regex_flag) == 0) {
 
-  }
-  regfree(&buffer);
-}
+//   }
+//   regfree(&buffer);
+// }
 
 void read_file(char *string_file, int *sf, char *pattern,
                struct all_flags value, FILE *f) {
