@@ -1,0 +1,19 @@
+1:// Copyright 2022 tyeneala@student.21-school.ru
+2:#include "./s21_string.h"
+3:#include <stdlib.h>
+4:
+5:// Ф-я определения длины строки
+6:int s21_strlen(const char *str) {
+9:        size++;
+10:    return size;
+11:}
+12:// Ф-я сравнения строк
+13:int s21_strcmp(const char *str1, const char *str2) {
+18:    return cmp;
+19:}
+1:// Ф-я добавляет str2 в конец str1 (конкатенация)
+2:char *s21_strcat(char *str1, const char *str2) {
+6:    int i;
+12:    free(new_str);
+13:    return str1;
+14:}

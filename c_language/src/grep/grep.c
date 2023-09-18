@@ -4,21 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-
-void check_flags(int argc, char **argv);
-char *realization_flag_f(int *size_p, char **pattern, char *optarg,
-                         struct all_flags *value);
-void new_pattern(int argc, char **argv, char **pattern, int *lp,
-                 struct all_flags value);
-void massive_files(int argc, char **argv, char *pattern, int *lp,
-                   struct all_flags value);
-void open_file(char **files, int *sf, char *pattern, struct all_flags value);
-void read_file(char *string_file, int *sf, char *pattern,
-               struct all_flags value, FILE *f);
-void newstr(struct all_flags value, char *string_file, char *string, int n,
-            int *sf, char *pattern, regex_t buffer);
-void printf_in_loop(struct all_flags value, char *string_file, char *string,
-                    int n, int *sf);
+#include "grep.h"
 
 int main(int argc, char **argv) {
   if (argc > 2) {
@@ -31,10 +17,10 @@ int main(int argc, char **argv) {
 }
 
 // Memory allocation One-dimensional array
-int GrepUtilityMemoryAllocTDArray(char **str, size_t *size_str, size_t need_size) {
+int GrepUtilityMemoryAllocODArray(char **str, size_t *size_str, size_t need_size) {
   int fail = 0;
   *str = NULL;
-  *str = (char *)malloc(need_size * sizeof(char));
+  *str = (char *)calloc(need_size, sizeof(char));
   *size_str = need_size;
   if (*str == NULL) {
     fprintf(stderr, "Memory was not allocated");
@@ -48,7 +34,7 @@ int GrepUtilityMemoryAllocTDArray(char **str, size_t *size_str, size_t need_size
 int GrepUtilityMemoryOverODArray(char **str, size_t *size_str, size_t need_size) {
   int fail = 0;
   char *new_str;
-  fail = GrepMemoryAllocation(new_str, size_str, need_size);
+  fail = GrepUtilityMemoryAllocODArray(&new_str, size_str, need_size);
   if (fail == 0) {
     memcpy(new_str, *str, *size_str);
     free(*str);
@@ -64,11 +50,11 @@ void GrepUtilityCheckFlags(int argc, char **argv) {
   struct GrepDates data;
   data.pattern.size_p = 1;
   data.fail = 0;
-  if (GrepUtilityMemoryAllocTDArray(&data.pattern.str_p, &data.pattern.size_p, 1)) {
+  if (!GrepUtilityMemoryAllocODArray(&data.pattern.str_p, &data.pattern.size_p, 0)) {
     int res = 0;
     while ((res = getopt_long(argc, argv, "e:ivclnhsf:o", NULL, NULL)) != -1 && data.fail == 0) {
       switch (res) {
-        case 'f': GrepUtilityRealizationFlagF(&data); break;
+        case 'f': GrepUtilityOpenFileInFlagF(&data); break;
         case 'e': GrepUtilityRealizationFlagE(&data); break;
         case 'i': data.mode.i = 1; break;
         case 'v': data.mode.v = 1; break;
@@ -81,7 +67,7 @@ void GrepUtilityCheckFlags(int argc, char **argv) {
         default: data.fail = 2; break;
       }
     }
-    GrepUtilityRealization(argc, argv, data);
+    GrepUtilityRealization(argc, argv, &data);
     free(data.pattern.str_p);
   }
 }
@@ -93,7 +79,7 @@ void GrepUtilityOpenFileInFlagF(struct GrepDates *data) {
   file_stream = fopen(optarg, "r");
   if (file_stream == NULL) {
     fprintf(stderr, "%s: no such file\n", optarg);
-    data->fail = 1
+    data->fail = 1;
   } else {
     GrepUtilityRealizationInFlagF(file_stream, data);
     fclose(file_stream);
@@ -111,7 +97,7 @@ void GrepUtilityRealizationInFlagF(FILE* file_stream, struct GrepDates *data) {
     }
     size_t mode = (data -> pattern.size_p == 1) ? 2 : 5;
     size_t need_size = size_str + mode;
-    if (GrepUtilityMemoryOverODArray(&data ->pattern.str_p, &data -> pattern.size_p, need_size)) {
+    if (!GrepUtilityMemoryOverODArray(&data ->pattern.str_p, &data -> pattern.size_p, need_size)) {
       if (mode == 1) {
         strcpy(data ->pattern.str_p, str);
       } else {
@@ -122,16 +108,16 @@ void GrepUtilityRealizationInFlagF(FILE* file_stream, struct GrepDates *data) {
     }
   }
   if (str != NULL) {
-    free(str)
+    free(str);
   }
 }
 
 // Take pattern
 void GrepUtilityRealizationFlagE(struct GrepDates *data) {
   data -> mode.e = 1;
-  size_t mode = (data -> pattern.size_p == 1) ? 1 : 3;
+  size_t mode = (data -> pattern.size_p == 0) ? 1 : 3;
   size_t need_size = strlen(optarg) + mode;
-  if (GrepUtilityMemoryOverODArray(&data ->pattern.str_p, &data ->pattern.size_p, need_size)) {
+  if (!GrepUtilityMemoryOverODArray(&data ->pattern.str_p, &data ->pattern.size_p, need_size)) {
     if (mode == 1) {
       strcpy(data ->pattern.str_p, optarg);
     } else {
@@ -148,7 +134,8 @@ void GrepUtilityRealization(int argc, char **argv, struct GrepDates *data) {
   if (data -> fail == 2) {
     fprintf(stderr, "no such commands");
   } else {
-    if (data -> flags.size == 1) { // there were no <e> and <f> flags
+    data -> last_position = 1;
+    if (data -> pattern.size_p == 0) { // there were no <e> and <f> flags
       GrepUtilityTakingAPattern(argc, argv, data);
     } 
     if (data -> fail == 0) {
@@ -160,12 +147,12 @@ void GrepUtilityRealization(int argc, char **argv, struct GrepDates *data) {
 // Take pattern
 void GrepUtilityTakingAPattern(int argc, char **argv, struct GrepDates *data) {
   size_t need_size = 0;
-  for (size_t i = 1; i < argc && need_size == 0, ++i) {
+  for (size_t i = 1; i < (size_t)argc && need_size == 0; ++i) {
     if (argv[i][0] != '-') {
-      size_t new_size = strlen(*argv) + 1;
-      if (GrepUtilityMemoryOverODArray(&data ->inp.pattern, &data -> inp.size, need_size)) {
-        strcpy(*pattern, argv[i]);
-        data -> last_pisition = i + 1;
+      need_size =  strlen(*argv) + 1;
+      if (!GrepUtilityMemoryOverODArray(&data ->pattern.str_p, &data -> pattern.size_p, need_size)) {
+        strcpy(data ->pattern.str_p, argv[i]);
+        data -> last_position = i + 1;
       }
     }
   }
@@ -174,7 +161,7 @@ void GrepUtilityTakingAPattern(int argc, char **argv, struct GrepDates *data) {
 // Memory allocation to a two-dimensional files array
 int GrepUtilityMemoryAllocTDFArray(char ***str, size_t *size_str, size_t need_size) {
   *str = NULL;
-  *str = (char **)malloc(need_size, sizeof(char *));
+  *str = (char **)calloc(need_size, sizeof(char *));
   *size_str = need_size;
   int fail = 0;
   if (*str == NULL) {
@@ -192,15 +179,22 @@ int GrepUtilityMemoryOverTDFArray(char ***str, size_t *size_str ,size_t need_fs,
   int fail = 0;
   char **new_str = NULL;
   size_t new_size = 0;
-  if (GrepUtilityMemoryAllocTDFArray(&new_str, &new_size, need_fs)) {
-    for (size_t i = 0; i < *size_str; ++i) {
-      memcpy(new_str[i], (*str)[i], strlen((*str)[i]));
+  if (!GrepUtilityMemoryAllocTDFArray(&new_str, &new_size, need_fs)) {
+    size_t new_second_size = 0;
+    for (size_t i = 0; i < *size_str && fail == 0; ++i) {
+      if (GrepUtilityMemoryAllocODArray(&new_str[i], &new_second_size, strlen((*str)[i]))) {
+        fail = 1;
+      } else {
+        strcpy(new_str[i], (*str)[i]);
+      }
     }
-    GrepUtilityCleanTDFArray(str, size_str);
-    *str = new_str;
-    *size_str = new_size;
-    size_t second_size = 0;
-    fail = GrepUtilityMemoryAllocTDArray(&(*str)[*size_str - 1], &second_size, need_ss);
+    if (fail == 0) {
+      GrepUtilityCleanTDFArray(str, size_str);
+      *str = new_str;
+      *size_str = new_size;
+      size_t second_size = 0;
+      fail = GrepUtilityMemoryAllocODArray(&(*str)[*size_str - 1], &second_size, need_ss);
+    }
   } else {
     fail = 1;
   }
@@ -209,33 +203,35 @@ int GrepUtilityMemoryOverTDFArray(char ***str, size_t *size_str ,size_t need_fs,
 
 void GrepUtilityCleanTDFArray(char ***str, size_t *size_str) {
   for (size_t i = 0; i < *size_str; ++i) {
-    free(*str[i]);
+    free((*str)[i]);
   }
   free(*str);
 }
 
 // getting an array of files
 void GrepUtilityArrayFiles(int argc, char **argv, struct GrepDates *data) {
-  if (GrepUtilityMemoryAllocTDFArray(&data -> files.str_f, &data -> files.size_f, 1)) {
-    for (size_t i = data -> last_position; i < argc && data -> fail == 0; ++i) {
+  if (!GrepUtilityMemoryAllocTDFArray(&data -> files.str_f, &data -> files.size_f, 0)) {
+    for (size_t i = data -> last_position; i < (size_t)argc && data -> fail == 0; ++i) {
       if (strcmp("-e", argv[i]) == 0 || strcmp("-f", argv[i]) == 0) {
         ++i;
       } else if (argv[i][0] != '-') {
-        data -> fail = GrepUtilityMemoryOverTDFArray(&data -> files.str_f, &data -> files.size_f, data -> files.size_f + 1, strlen(argv[i]) + 1);
-        strcpy(data -> files.str_f[data -> files.size_f - 1], argv[i]);
+          data -> fail = GrepUtilityMemoryOverTDFArray(&data -> files.str_f, &data -> files.size_f, data -> files.size_f + 1, strlen(argv[i]) + 1);
+        if (data -> fail == 0) {
+          strcpy(data -> files.str_f[data -> files.size_f - 1], argv[i]);
+          }
       } else if (argv[i][strlen(argv[i]) - 1] == 'e' ||
                  argv[i][strlen(argv[i]) - 1] == 'f') {
         ++i;
       }
     }
     if (data -> fail == 0) {
-      if (data -> files.size_f == 1) {
+      if (data -> files.size_f < 1) {
         fprintf(stderr, "no such file or directory\n");
       } else {
         GrepUtilityOpenFile(data);
       }
     }
-    GrepUtilityCleanTDFArray(data -> files.str_f, data -> files.size_f);
+    GrepUtilityCleanTDFArray(&data -> files.str_f, &data -> files.size_f);
   }
 }
 
@@ -247,170 +243,143 @@ void GrepUtilityOpenFile(struct GrepDates *data) {
         fprintf(stderr, "%s: no such file\n", data -> files.str_f[i]);
       }
     } else {
-      GrepUtilityReadFile(data, i);
+      GrepUtilityReadFile(data, i, file_stream);
       fclose(file_stream);
     }
   }
 }
 
-// void GrepUtilityReadFile(struct GrepDates *data, int *i) {
-//   char string = NULL;
-//   size_t size_string = 0;
-//   // for regex
-//   size_t nmatch = 1;
-//   regmatch_t pmatch[1];
-//   regex_t buffer;
-//   int temp, regex_flag;
-
-//   if (data -> mode.i == 0) {
-//     regex_flag = REG_NEWLINE | REG_EXTENDED | REG_ICASE;
-//   } else {
-//     regex_flag = REG_NEWLINE | REG_EXTENDED;
-//   }
-//   if (regcomp(&buffer, data -> pattern.str_p, regex_flag) == 0) {
-
-//   }
-//   regfree(&buffer);
-// }
-
-void read_file(char *string_file, int *sf, char *pattern,
-               struct all_flags value, FILE *f) {
-  char *string = NULL;
-  size_t size_string;
-  size_t nmatch = 1;
-  regmatch_t pmatch[1];
-  regex_t buffer;
-  int temp, cflag;
-  int flag_for_l = 0;
-  int n = 1;  // counter for flag n
-  int c = 0;
-  if (value.i == 1) {
-    cflag = REG_NEWLINE | REG_EXTENDED | REG_ICASE;
+// fs - file_stream
+void GrepUtilityReadFile(struct GrepDates *data, int i, FILE *fs) {
+  struct GrepRegex reg_data;
+  if (data -> mode.i == 1) {
+    reg_data.reg_flag = REG_NEWLINE | REG_EXTENDED | REG_ICASE;
   } else {
-    cflag = REG_NEWLINE | REG_EXTENDED;
+    reg_data.reg_flag = REG_NEWLINE | REG_EXTENDED;
   }
-  if (regcomp(&buffer, pattern, cflag) == 0) {
-    while (getline(&string, &size_string, f) != -1) {
-      temp = regexec(&buffer, string, nmatch, pmatch, 0);
-      if ((temp == 0 && value.v == 0) || (temp == 1 && value.v == 1)) {
-        if ((value.c == 0 && value.l != 1) &&
-            (value.o == 0 || (value.o == 1 && value.v == 1))) {
-          printf_in_loop(value, string_file, string, n, sf);
-        } else if ((value.c == 0 && value.l != 1) &&
-                   (value.o == 1 && value.v == 0)) {
-          newstr(value, string_file, string, n, sf, pattern, buffer);
-        } else if (value.l == 1 && value.c == 1) {
-          flag_for_l = 1;
-          c++;
-          break;
-        } else {
-          flag_for_l = 1;
-          c++;
-        }
-        if (value.fail == 1) {
-          break;
-        }
-      }
-      n++;
-    }
-    if (value.c == 1) {
-      if (*sf > 1 && value.h == 0) {
-        printf("%s:%d\n", string_file, c);
+  if (regcomp(&reg_data.buffer, data -> pattern.str_p, reg_data.reg_flag) == 0) {
+    GrepUtilityProccesReadFile(data, i, &reg_data, fs);
+  }
+  regfree(&reg_data.buffer);
+}
+
+void GrepUtilityProccesReadFile(struct GrepDates *data, int i, struct GrepRegex *reg_data, FILE *fs) {
+  char *string = NULL;
+  size_t size_string = 0;
+  reg_data -> nmatch = 1;
+  int mode_l = 0;
+  int regex_res = 0;
+  int numbering = 1;
+  int count = 1;
+  while (getline(&string, &size_string, fs) != -1) {
+    regex_res = regexec(&reg_data -> buffer, string, reg_data -> nmatch, reg_data -> pmatch, 0);
+    if ((regex_res == 0 && data -> mode.v == 0) || (regex_res = 1 && data -> mode.v == 1)) {
+      if ((data -> mode.c == 0 && data -> mode.l != 1) && (data -> mode.o == 0 || (data -> mode.o == 1 && data -> mode.v == 1))) {
+        GrepUtilityPrintDates(data, i, string, numbering);
+      } else if ((data -> mode.c == 0 && data -> mode.l != 1) && (data -> mode.o == 1 && data -> mode.v == 0)) {
+        data -> fail = GrepUtilityOptionO(data, i, reg_data, string, numbering);
+      } else if (data -> mode.l == 1 && data -> mode.c == 1) {
+        mode_l = 1;
+        ++count;
+        break;
       } else {
-        printf("%d\n", c);
+        mode_l = 1;
+        ++count;
+      }
+      if (data -> fail != 0) {
+        break;
       }
     }
-    if (value.l == 1) {
-      if (flag_for_l == 1) {
-        printf("%s\n", string_file);
-      }
+    ++numbering;
+  }
+  if (data -> fail == 0 && data -> mode.c == 1) {
+    if (data -> files.size_f > 1 && data -> mode.h == 0) {
+      printf("%s:%d\n", data -> files.str_f[i], count);
+    } else {
+      printf("%d\n", count);
     }
   }
-  regfree(&buffer);
+  if (data -> fail == 0 && data -> mode.l == 1) {
+      if (mode_l == 1) {
+        printf("%s\n", data -> files.str_f[i]);
+      }
+  }
   free(string);
 }
 
-
-// void open_file(char **files, int *sf, char *pattern, struct all_flags value) {
-//   FILE *f;
-//   for (int t = 0; t < *sf; t++) {
-//     if ((f = fopen(files[t], "r")) == NULL) {
-//       if (value.s == 0) {
-//         fprintf(stderr, "%s: no such file\n", files[t]);
-//       }
-//     } else {
-//       char *string_file = files[t];
-//       read_file(string_file, sf, pattern, value, f);  // string = files[t]
-//       fclose(f);
-//     }
-//   }
-// }
-
-
-void newstr(struct all_flags value, char *string_file, char *string, int n,
-            int *sf, char *pattern, regex_t buffer) {
-  int size_string = strlen(string);
-  size_t nmatch = 1;
-  regmatch_t pmatch[1];
-  int temp;
-  temp = regexec(&buffer, string, nmatch, pmatch, 0);
-  if (temp == 0) {
-    if (pmatch->rm_eo <= size_string) {
-      char *new_string = NULL;
-      int z = (pmatch->rm_eo - pmatch->rm_so);
-      new_string = (char *)calloc(z + 1, sizeof(char));
-      for (int i = pmatch->rm_so, j = 0; i < pmatch->rm_eo; i++, j++) {
-        new_string[j] = string[i];
-      }
-      printf_in_loop(value, string_file, new_string, n, sf);
-      free(new_string);
-      value.n = 0;
-      new_string = (char *)calloc(2, sizeof(char));
-      if ((pmatch->rm_eo + 1) >= size_string) {
-        free(new_string);
-      } else {
-        new_string[0] = ' ';
-        new_string = (char *)realloc(
-            new_string, (size_string - pmatch->rm_eo + 1) * sizeof(char));
-        for (int i = pmatch->rm_eo + 1, j = 1; i <= size_string; i++, j++) {
-          new_string[j] = string[i];
-        }
-        newstr(value, string_file, new_string, n, sf, pattern, buffer);
-        free(new_string);
-      }
-    }
-  }
-}
-
-void printf_in_loop(struct all_flags value, char *string_file, char *string,
-                    int n, int *sf) {
+void GrepUtilityPrintDates(struct GrepDates *data, int i, char *string, int num) {
   if (string[strlen(string) - 1] == '\n') {
-    if (value.n == 1) {
-      if (*sf > 1 && value.h == 0) {
-        printf("%s:%d:%s", string_file, n, string);
+    if (data -> mode.n == 1) {
+      if (data -> files.size_f > 1 && data -> mode.h == 0) {
+        printf("%s:%d:%s", data -> files.str_f[i], num, string);
       } else {
-        printf("%d:%s", n, string);
+        printf("%d:%s", num, string);
       }
     } else {
-      if (*sf > 1 && value.h == 0) {
-        printf("%s:%s", string_file, string);
+      if (data -> files.size_f > 1 && data -> mode.h == 0) {
+        printf("%s:%s", data -> files.str_f[i], string);
       } else {
         printf("%s", string);
       }
     }
   } else {
-    if (value.n == 1) {
-      if (*sf > 1 && value.h == 0) {
-        printf("%s:%d:%s\n", string_file, n, string);
+    if (data -> mode.n == 1) {
+      if (data -> files.size_f > 1 && data -> mode.h == 0) {
+        printf("%s:%d:%s\n", data -> files.str_f[i], num, string);
       } else {
-        printf("%d:%s\n", n, string);
+        printf("%d:%s\n", num, string);
       }
     } else {
-      if (*sf > 1 && value.h == 0) {
-        printf("%s:%s\n", string_file, string);
+      if (data -> files.size_f > 1 && data -> mode.h == 0) {
+        printf("%s:%s\n", data -> files.str_f[i], string);
       } else {
         printf("%s\n", string);
       }
     }
   }
 }
+
+int GrepUtilityOptionO(struct GrepDates *data, int i, struct GrepRegex *reg_data, char *string, int num) {
+  size_t size_string = strlen(string);
+  int new_res_reg;
+  new_res_reg = regexec(&reg_data -> buffer, string, reg_data -> nmatch, reg_data -> pmatch, 0);
+  if (new_res_reg == 0 && (size_t)reg_data -> pmatch -> rm_eo <= size_string) {
+    char *new_string = NULL;
+    size_t size_new_string = 0;
+    size_t need_size = reg_data -> pmatch -> rm_eo - reg_data -> pmatch -> rm_so;
+    if (!GrepUtilityMemoryAllocODArray(&new_string, &size_new_string, need_size)) {
+      for (size_t i = reg_data -> pmatch -> rm_so, j = 0; i < (size_t)reg_data -> pmatch -> rm_eo; ++i, ++j) {
+        new_string[j] = string[i];
+      }
+      GrepUtilityPrintDates(data, i, string, num);
+      free(new_string);
+      data -> mode.n = 0;
+      size_t old_size = size_new_string;
+      if (!GrepUtilityMemoryAllocODArray(&new_string, &size_new_string, 2)) {
+        if ((size_t)reg_data -> pmatch -> rm_eo + 1 >= old_size) {
+          free(new_string);
+        } else {
+          new_string[0] = ' ';
+          need_size = old_size - reg_data -> pmatch -> rm_eo + 1;
+          if (!GrepUtilityMemoryOverODArray(&new_string, &size_new_string, need_size)) {
+            for (size_t i = reg_data -> pmatch -> rm_eo, j = 1; i <= old_size; ++i, ++j) {
+              new_string[j] = string[i];
+            }
+            if (GrepUtilityOptionO(data, i, reg_data, new_string, num)) {
+              data -> fail = 1;
+            }
+            free(new_string);
+          } else {
+            data -> fail = 1;
+          }
+        }
+      } else {
+        data -> fail = 1;
+      }
+    } else {
+      data -> fail = 1;
+    }
+  }
+  return data -> fail;
+}
+
