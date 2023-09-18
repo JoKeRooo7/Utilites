@@ -270,13 +270,13 @@ void GrepUtilityProccesReadFile(struct GrepDates *data, int i, struct GrepRegex 
   int mode_l = 0;
   int regex_res = 0;
   int numbering = 1;
-  int count = 1;
+  int count = 0;
   while (getline(&string, &size_string, fs) != -1) {
     regex_res = regexec(&reg_data -> buffer, string, reg_data -> nmatch, reg_data -> pmatch, 0);
     if ((regex_res == 0 && data -> mode.v == 0) || (regex_res = 1 && data -> mode.v == 1)) {
       if ((data -> mode.c == 0 && data -> mode.l != 1) && (data -> mode.o == 0 || (data -> mode.o == 1 && data -> mode.v == 1))) {
         GrepUtilityPrintDates(data, i, string, numbering);
-      } else if ((data -> mode.c == 0 && data -> mode.l != 1) && (data -> mode.o == 1 && data -> mode.v == 0)) {
+      } else if (data -> mode.c == 0 && data -> mode.l != 1 && data -> mode.o == 1 && data -> mode.v == 0) {
         data -> fail = GrepUtilityOptionO(data, i, reg_data, string, numbering);
       } else if (data -> mode.l == 1 && data -> mode.c == 1) {
         mode_l = 1;
@@ -342,11 +342,12 @@ void GrepUtilityPrintDates(struct GrepDates *data, int i, char *string, int num)
 int GrepUtilityOptionO(struct GrepDates *data, int i, struct GrepRegex *reg_data, char *string, int num) {
   size_t size_string = strlen(string);
   int new_res_reg;
+  reg_data -> nmatch = 1;
   new_res_reg = regexec(&reg_data -> buffer, string, reg_data -> nmatch, reg_data -> pmatch, 0);
   if (new_res_reg == 0 && (size_t)reg_data -> pmatch -> rm_eo <= size_string) {
     char *new_string = NULL;
     size_t size_new_string = 0;
-    size_t need_size = reg_data -> pmatch -> rm_eo - reg_data -> pmatch -> rm_so;
+    size_t need_size = reg_data -> pmatch -> rm_eo - reg_data -> pmatch -> rm_so + 1;
     if (!GrepUtilityMemoryAllocODArray(&new_string, &size_new_string, need_size)) {
       for (size_t i = reg_data -> pmatch -> rm_so, j = 0; i < (size_t)reg_data -> pmatch -> rm_eo; ++i, ++j) {
         new_string[j] = string[i];

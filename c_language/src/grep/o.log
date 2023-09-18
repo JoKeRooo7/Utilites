@@ -1,0 +1,27 @@
+#include <stdio.h>
+#include <string.h>
+
+char get_gnu(const char *argv);
+))
+
+    
+
+
+
+    char *argv = "--number";
+    return 0;
+}
+
+// Функция идентификации флага в формате GNU
+char get_gnu(const char *argv) {
+    char flag[][20] = {
+        "--number-nonblank",
+        "--number",
+        "--squeeze-blank",
+    }, out[3] = {98, 110, 115};
+    for (; i < 3; i++) {
+        if (strcat(flag[i], argv))
+            break;
+    }
+    return (i == 3 ? '0' : out[i]);
+}
