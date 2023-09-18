@@ -16,7 +16,7 @@ all: build
 build:
 	@mkdir -p $(WFB)
 	@mkdir -p $(WF)
-	$(CC)  -static-libgcc *.c -o $(WF)grep $(LIBS)
+	$(CC)  -static-libgcc s21_grep.c -o $(WF)grep $(LIBS)
 
 # valgrind: test
 	# CK_FORK=no valgrind --vgdb=no --leak-check=full --show-leak-kinds=all --track-origins=yes --verbose --log-file=RESULT_VALGRIND.txt ./res_test

@@ -51,7 +51,7 @@ int main(int argc, char **argv) {
 }
 
 void check_flags(int argc, char **argv) {
-  printf("CheckFlags\n");
+//   printf("CheckFlags\n");
   char *pattern = NULL;
   pattern = (char *)malloc(sizeof(char));
   struct all_flags value = {0};
@@ -61,7 +61,7 @@ void check_flags(int argc, char **argv) {
   while ((rezult = getopt_long(argc, argv, "e:ivclnhsf:o", NULL, NULL)) != -1) {
     switch (rezult) {
       case 'e': {
-          printf("FlagE\n");
+        //   printf("FlagE\n");
         if (size_p == 0) {  // grep -e -i pattern text.tc  value.e == 0
           value.e = 1;
           int z = strlen(optarg);
@@ -112,7 +112,7 @@ void check_flags(int argc, char **argv) {
     }
   }
   if (value.fail == 0) {
-    printf("Realization\n");
+    // printf("Realization\n");
     if (value.e == 0 && value.f == 0) {
       new_pattern(argc, argv, &pattern, &last_position, value);
     } else {
@@ -126,8 +126,8 @@ void check_flags(int argc, char **argv) {
 
 char *realization_flag_f(int *size_p, char **pattern, char *optarg,
                          struct all_flags *value) {
-  printf("FlagF\n");
-  printf("ResFlagF\n");
+//   printf("FlagF\n");
+//   printf("ResFlagF\n");
   FILE *f;
   if ((f = fopen(optarg, "r")) == NULL) {
     fprintf(stderr, "%s: no such file\n", optarg);
@@ -160,7 +160,7 @@ char *realization_flag_f(int *size_p, char **pattern, char *optarg,
 
 void new_pattern(int argc, char **argv, char **pattern, int *lp,
                  struct all_flags value) {
-  printf("TakePattern\n");
+//   printf("TakePattern\n");
   for (int i = 1; i < argc; i++) {
     if (argv[i][0] != '-') {
       int size_p = strlen(*argv) + 1;
@@ -175,7 +175,7 @@ void new_pattern(int argc, char **argv, char **pattern, int *lp,
 
 void massive_files(int argc, char **argv, char *pattern, int *lp,
                    struct all_flags value) {
-  printf("ArrayFiles\n");
+//   printf("ArrayFiles\n");
   char **files = NULL;
   int size_file = 0;
   files = (char **)malloc(sizeof(char *));
@@ -214,7 +214,7 @@ void massive_files(int argc, char **argv, char *pattern, int *lp,
 
 void open_file(char **files, int *sf, char *pattern, struct all_flags value) {
   FILE *f;
-  printf("OpenFilesFiles\n");
+//   printf("OpenFilesFiles\n");
   for (int t = 0; t < *sf; t++) {
     if ((f = fopen(files[t], "r")) == NULL) {
       if (value.s == 0) {
@@ -230,8 +230,8 @@ void open_file(char **files, int *sf, char *pattern, struct all_flags value) {
 
 void read_file(char *string_file, int *sf, char *pattern,
                struct all_flags value, FILE *f) {
-  printf("ReadFilesFiles\n");
-  printf("ProcessReadFilesFiles\n");
+//   printf("ReadFilesFiles\n");
+//   printf("ProcessReadFilesFiles\n");
   char *string = NULL;
   size_t size_string;
   size_t nmatch = 1;
@@ -289,7 +289,7 @@ void read_file(char *string_file, int *sf, char *pattern,
 
 void newstr(struct all_flags value, char *string_file, char *string, int n,
             int *sf, char *pattern, regex_t buffer) {
-     printf("FlagO\n");
+    //  printf("FlagO\n");
   int size_string = strlen(string);
   size_t nmatch = 1;
   regmatch_t pmatch[1];
@@ -325,7 +325,7 @@ void newstr(struct all_flags value, char *string_file, char *string, int n,
 
 void printf_in_loop(struct all_flags value, char *string_file, char *string,
                     int n, int *sf) {
-printf("Print\n");
+// printf("Print\n");
   if (string[strlen(string) - 1] == '\n') {
     if (value.n == 1) {
       if (*sf > 1 && value.h == 0) {
