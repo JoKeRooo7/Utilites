@@ -51,7 +51,7 @@ Learn more about the utility - [grep](https://en.wikipedia.org/wiki/Grep)
     - f
     - o
 
-- launch `` ./grep <flags> <files> ```
+- launch ``` ./grep <flags> <files> ```
 ---
 
 ## assembly
