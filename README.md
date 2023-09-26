@@ -12,7 +12,7 @@ ___
   * [grep](#grep)
 
 * [build](#build) 
-* [usage example](#usage example)
+* [usage example](#usage-example)
 
 ___
 
